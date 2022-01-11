@@ -1,4 +1,4 @@
-module karte
+module kartographer
 
 go 1.17
 

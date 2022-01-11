@@ -7,7 +7,7 @@ import (
 	"image/draw"
 	"image/png"
 	"io/fs"
-	"karte/entities"
+	"kartographer/entities"
 	"log"
 	"os"
 	"path/filepath"

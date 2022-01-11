@@ -8,8 +8,8 @@ import (
 	"github.com/Tnze/go-mc/nbt"
 	"image"
 	"io"
-	"karte/textures"
-	"karte/utils"
+	"kartographer/textures"
+	"kartographer/utils"
 	"math"
 )
 

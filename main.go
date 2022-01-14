@@ -72,6 +72,7 @@ func main() {
 	ts := time.Now()
 
 	ff, err := os.Create("rectangle.png")
+	defer ff.Close()
 	if err != nil {
 		log.Println(err)
 	}

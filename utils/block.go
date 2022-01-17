@@ -3,6 +3,7 @@ package utils
 import (
 	"errors"
 	"fmt"
+	"github.com/anthonynsimon/bild/adjust"
 	"github.com/anthonynsimon/bild/transform"
 	"image"
 	"image/draw"
@@ -33,7 +34,7 @@ func RenderFullBlock(topPath string, sidePath string) (image.Image, error) {
 
 	defer side.Close()
 
-	canvas := image.NewRGBA(image.Rectangle{Min: image.Point{}, Max: image.Point{X: 32, Y: 32}})
+	canvas := image.NewRGBA(image.Rectangle{Min: image.Point{}, Max: image.Point{X: 32, Y: 35}})
 
 	topImage, _, err := image.Decode(top)
 	if err != nil {
@@ -46,22 +47,20 @@ func RenderFullBlock(topPath string, sidePath string) (image.Image, error) {
 	}
 
 	transformTop := transformTextures(topImage, transformOpts{
-		shearHAngle:   26.5650512,
-		rotationAngle: 30,
-		h:             0.864,
+		rotationAngle: -45,
+		w:             2.1,
 	})
 
-	transformLeft := transformTextures(sideImage, transformOpts{
-		shearHAngle:   -26.5650512,
-		rotationAngle: 30,
-		h:             0.864,
-	})
+	transformLeft := adjust.Brightness(transformTextures(sideImage, transformOpts{
+		shearVAngle: -30,
+		h:           1.2,
+	}), -0.2)
 
-	transformRight := transform.FlipH(transformLeft)
+	transformRight := adjust.Brightness(transform.FlipH(transformLeft), -0.4)
 
-	draw.Draw(canvas, transformTop.Bounds().Add(image.Point{X: 4, Y: -1}), transformTop, image.Point{}, draw.Over)
-	draw.Draw(canvas, transformLeft.Bounds().Add(image.Point{X: -2, Y: 10}), transformLeft, image.Point{}, draw.Over)
-	draw.Draw(canvas, transformRight.Bounds().Add(image.Point{X: 9, Y: 10}), transformRight, image.Point{}, draw.Over)
+	draw.Draw(canvas, transformTop.Bounds().Add(image.Point{X: 1, Y: 0}), transformTop, image.Point{}, draw.Over)
+	draw.Draw(canvas, transformLeft.Bounds().Add(image.Point{X: 0, Y: 7}), transformLeft, image.Point{}, draw.Over)
+	draw.Draw(canvas, transformRight.Bounds().Add(image.Point{X: 16, Y: 7}), transformRight, image.Point{}, draw.Over)
 
 	return canvas, nil
 }
@@ -87,10 +86,20 @@ func transformTextures(img image.Image, opts transformOpts) image.Image {
 
 	height, width := int(float64(img.Bounds().Dy())*opts.h), int(float64(img.Bounds().Dx())*opts.w)
 
-	resize := transform.Resize(img, width, height, transform.NearestNeighbor)
-	shear := transform.ShearH(resize, opts.shearHAngle)
-	shear = transform.ShearV(shear, opts.shearVAngle)
-	rotate := transform.Rotate(shear, opts.rotationAngle, &transform.RotationOptions{ResizeBounds: true})
+	rotate := transform.Rotate(img, opts.rotationAngle, &transform.RotationOptions{ResizeBounds: true})
+	resize := transform.Resize(rotate, width, height, transform.Lanczos)
 
-	return rotate
+	// Shear only if you need to
+	// A shearAngle of 0 also distorts the image
+	shear := resize
+
+	if opts.shearHAngle != 0 {
+		shear = transform.ShearH(resize, opts.shearHAngle)
+	}
+
+	if opts.shearVAngle != 0 {
+		shear = transform.ShearV(shear, opts.shearVAngle)
+	}
+
+	return shear
 }
